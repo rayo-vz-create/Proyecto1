@@ -14,7 +14,7 @@ CREATE TABLE usuarios (
     apellido VARCHAR(100) NULL,
     nombre_comercial VARCHAR(150) NULL, -- Solo para agencias
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    double_auth_secret VARCHAR(255) DEFAULT NULL
+    secret_2fa VARCHAR(255) DEFAULT NULL -- CORREGIDO: Nombre sincronizado con app.py
 );
 
 -- --- DATOS DE PRUEBA: USUARIOS Y AGENCIAS ---

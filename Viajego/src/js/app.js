@@ -1,3 +1,6 @@
+// --- CONFIGURACIÓN DE SEGURIDAD ---
+const CLAVE_SECRETA = "ViajeGO_Secure_Key_2026"; 
+
 let currentItem = null;
 let currentType = '';
 let modalInstance = null;
@@ -18,6 +21,13 @@ const PRECIOS_EXTRA = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Carga dinámica de CryptoJS si no existe en el HTML
+    if (typeof CryptoJS === 'undefined') {
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js";
+        document.head.appendChild(script);
+    }
+
     checkLogin();
     
     const tabs = document.querySelectorAll('#catalogoTabs button');
@@ -63,7 +73,7 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-    document.getElementById('filtroDestino').value = '';
+    if(document.getElementById('filtroDestino')) document.getElementById('filtroDestino').value = '';
     renderizarTarjetas(allServicesData);
 }
 
@@ -101,7 +111,7 @@ function renderizarTarjetas(datos) {
 
     let html = '';
     datos.forEach(item => {
-        let nombre, precio, desc, detalles, icono;
+        let nombre, desc, detalles, icono;
         const precioF = parseFloat(item.precio || item.precio_noche).toLocaleString('en-US', {minimumFractionDigits: 2});
 
         if (currentType === 'vuelos') {
@@ -126,7 +136,7 @@ function renderizarTarjetas(datos) {
         
         html += `
         <div class="col">
-            <div class="card h-100 bg-dark border border-secondary text-white shadow-sm position-relative card-hover" style="background-color: #1a1a1a !important;">
+            <div class="card h-100 bg-dark border border-secondary text-white shadow-sm card-hover" style="background-color: #1a1a1a !important;">
                 <div class="position-absolute top-0 end-0 m-2 badge bg-black bg-opacity-75 border border-secondary text-light shadow-sm">
                     <i class="fas fa-building text-danger me-1"></i> ${nombreAgencia}
                 </div>
@@ -162,12 +172,9 @@ function abrirModal(tipo, itemString) {
     const today = new Date().toISOString().split('T')[0];
     const safeDate = (d) => { try { return new Date(d).toISOString().split('T')[0]; } catch(e){ return today; } };
 
-    // 1. Obtener las opciones disponibles desde la BD (string separado por comas)
-    // Para vuelos es 'clase_base', hoteles 'tipo_habitacion', bus 'tipo_asiento'
     const opcionesStr = currentItem.clase_base || currentItem.tipo_habitacion || currentItem.tipo_asiento || 'Estándar';
     const opcionesArr = opcionesStr.split(',');
 
-    // 2. Construir el HTML del Select
     let optionsHtml = '';
     opcionesArr.forEach(opt => {
         const key = opt.trim();
@@ -188,19 +195,11 @@ function abrirModal(tipo, itemString) {
             <div class="col-6"><label class="text-secondary small">Huéspedes</label><input type="number" id="guests" class="form-control bg-black text-white border-secondary" value="2" min="1" max="4" onchange="calcTotal()"></div>
         </div>`;
     } else {
-        const fSalida = new Date(currentItem.fecha_salida).toLocaleString();
-        const fLlegada = new Date(currentItem.fecha_llegada).toLocaleString();
         const rawStart = safeDate(currentItem.fecha_salida);
         const rawEnd = safeDate(currentItem.fecha_regreso_llegada);
 
         html = `
         <div class="alert alert-dark border-secondary text-info mb-3"><i class="fas fa-info-circle"></i> Fechas fijas programadas.</div>
-        <div class="p-3 bg-black rounded border border-secondary mb-3">
-            <div class="d-flex justify-content-between text-white">
-                <span><b>Salida:</b> ${fSalida}</span>
-                <span><b>Llegada:</b> ${fLlegada}</span>
-            </div>
-        </div>
         <div class="row g-3">
             <div class="col-6"><label class="text-secondary small">Clase / Asiento</label>
                 <select id="optionSelect" class="form-select bg-black text-white border-secondary" onchange="calcTotal()">
@@ -223,8 +222,6 @@ function abrirModal(tipo, itemString) {
 function calcTotal() {
     let total = 0;
     const guests = parseInt(document.getElementById('guests').value) || 1;
-    
-    // Obtenemos el multiplicador del select genérico
     const select = document.getElementById('optionSelect');
     const mult = parseFloat(select.selectedOptions[0].dataset.mult || 1);
 
@@ -232,7 +229,6 @@ function calcTotal() {
         const basePrice = parseFloat(currentItem.precio_noche);
         const startVal = document.getElementById('dateStart').value;
         const endVal = document.getElementById('dateEnd').value;
-        
         if (startVal && endVal) {
             const start = new Date(startVal);
             const end = new Date(endVal);
@@ -242,41 +238,126 @@ function calcTotal() {
             }
         }
     } else {
-        const basePrice = parseFloat(currentItem.precio);
-        total = basePrice * mult * guests;
+        total = parseFloat(currentItem.precio) * mult * guests;
     }
     document.getElementById('totalPriceDisplay').innerText = `$${total.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 }
 
-// ... (Resto de funciones: checkLogin, logout, procesarPago, cargarMisViajes igual que antes) ...
+// --- SESIÓN ---
 function checkLogin() {
     const userStr = localStorage.getItem('user');
     const authContainer = document.getElementById('auth-buttons');
     if (!authContainer) return; 
     
-    if (userStr) {
-        const user = JSON.parse(userStr);
-        let html = `<span class="text-white me-3 small">Hola, <b>${user.nombre || user.nombre_comercial}</b></span>`;
-        if(user.rol === 'admin') html += `<a href="adminPanel.html" class="btn btn-sm btn-warning me-2 fw-bold">Admin</a>`;
-        else if(user.rol === 'agencia') html += `<a href="servicesPanel.html" class="btn btn-sm btn-warning me-2 fw-bold">Panel</a>`;
-        html += `<a href="perfil.html" class="btn btn-sm btn-outline-danger me-2"><i class="fas fa-user-circle me-1"></i> Mi Perfil</a>`;
-        html += `<a href="mis_viajes.html" class="btn btn-sm btn-outline-light me-2">Mis Viajes</a>`;
-        html += `<button onclick="logout()" class="btn btn-sm btn-danger"><i class="fas fa-sign-out-alt"></i></button>`;
-        authContainer.innerHTML = html;
+    // CORRECCIÓN: Validamos que userStr exista y no sea la palabra "undefined"
+    if (userStr && userStr !== "undefined") {
+        try {
+            const user = JSON.parse(userStr);
+            let html = `<span class="text-white me-3 small">Hola, <b>${user.nombre || user.nombre_comercial}</b></span>`;
+            if(user.rol === 'admin') html += `<a href="adminPanel.html" class="btn btn-sm btn-warning me-2 fw-bold">Admin</a>`;
+            else if(user.rol === 'agencia') html += `<a href="servicesPanel.html" class="btn btn-sm btn-warning me-2 fw-bold">Panel</a>`;
+            html += `<a href="perfil.html" class="btn btn-sm btn-outline-danger me-2">Perfil</a>`;
+            html += `<a href="mis_viajes.html" class="btn btn-sm btn-outline-light me-2">Mis Viajes</a>`;
+            html += `<button onclick="logout()" class="btn btn-sm btn-danger"><i class="fas fa-sign-out-alt"></i></button>`;
+            authContainer.innerHTML = html;
+        } catch (e) {
+            // Si el JSON está mal, limpiamos para evitar el bucle de error
+            console.error("Error parseando usuario:", e);
+            localStorage.removeItem('user');
+        }
     } else {
-        authContainer.innerHTML = `<a href="login.html" class="text-secondary text-decoration-none small me-3 hover-white">Ingresar</a><a href="registro.html" class="btn btn-xs btn-outline-danger rounded-pill px-3 fw-bold" style="font-size: 0.8rem;">Registro</a>`;
+        authContainer.innerHTML = `<a href="login.html" class="text-secondary text-decoration-none small me-3">Ingresar</a><a href="registro.html" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">Registro</a>`;
     }
 }
+
 function logout() { localStorage.removeItem('user'); window.location.href = 'index.html'; }
 
+// --- NUEVA FUNCIÓN PARA REGISTRO SEGURO (MISAEL) ---
+async function registrarUsuario(event) {
+    if(event) event.preventDefault();
+    const nombre = document.getElementById('regNombre').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+
+    const datos = { nombre, email, password };
+    const key = CryptoJS.enc.Utf8.parse(CLAVE_SECRETA.padEnd(32, '0').substring(0, 32));
+    
+    const encrypted = CryptoJS.AES.encrypt(JSON.stringify(datos), key, {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+    }).toString();
+
+    try {
+        const res = await fetch('/api/registro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ encrypted_data: encrypted })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("✅ Registro exitoso. ¡Bienvenido!");
+            window.location.href = 'login.html';
+        } else {
+            alert("❌ Error: " + data.message);
+        }
+    } catch (e) {
+        console.error("Error:", e);
+        alert("Error de conexión al registrar.");
+    }
+}
+
+// --- NUEVA FUNCIÓN PARA LOGIN ENCRIPTADO (ACTUALIZADA) ---
+async function enviarLoginSeguro(email, password) {
+    const credenciales = { email: email, password: password };
+    const key = CryptoJS.enc.Utf8.parse(CLAVE_SECRETA.padEnd(32, '0').substring(0, 32));
+
+    const datosCifrados = CryptoJS.AES.encrypt(JSON.stringify(credenciales), key, {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+    }).toString();
+
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ encrypted_data: datosCifrados })
+        });
+        const data = await res.json();
+
+        if (data.success || data.encrypted_response) {
+            let finalData = data;
+            if (data.encrypted_response) {
+                const bytes = CryptoJS.AES.decrypt(data.encrypted_response, key, {
+                    mode: CryptoJS.mode.ECB,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                finalData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+            }
+
+            if (finalData.success) {
+                localStorage.setItem('user', JSON.stringify(finalData.user));
+                localStorage.setItem('token', finalData.token);
+                localStorage.setItem('csrf_token', finalData.csrf_token); 
+                console.log("🛡️ Login exitoso: JWT y CSRF Token guardados.");
+            }
+            return finalData;
+        }
+        return data;
+    } catch (e) {
+        console.error("Error en login seguro", e);
+        return { success: false, message: "Error de conexión" };
+    }
+}
+
+// --- PROCESAR PAGO (CON ENCRIPTACIÓN PARA BURP SUITE Y SOPORTE PYTHON) ---
 async function procesarPago() {
-    if(document.getElementById('cardNum').value.length < 16) return alert("Revisa la tarjeta");
+    if(document.getElementById('cardNum').value.length < 16) return alert("Tarjeta inválida");
     const total = parseFloat(document.getElementById('totalPriceDisplay').innerText.replace(/[$,]/g, ''));
     if(total <= 0) return alert("Total inválido");
 
     const user = JSON.parse(localStorage.getItem('user'));
-    // Obtener la opción seleccionada (nombre de la clase/habitación)
-    const selectedOption = document.getElementById('optionSelect').value;
+    const csrfToken = localStorage.getItem('csrf_token');
+    const jwtToken = localStorage.getItem('token');
 
     const payload = {
         user_id: user.id,
@@ -285,104 +366,129 @@ async function procesarPago() {
         date_start: document.getElementById('dateStart').value,
         date_end: document.getElementById('dateEnd').value,
         num_guests: document.getElementById('guests').value,
-        details: { 
-            info: "Reserva App", 
-            opcion: selectedOption // Guardamos qué eligió el usuario
-        },
+        details: { opcion: document.getElementById('optionSelect').value },
         total_price: total
     };
 
+    const key = CryptoJS.enc.Utf8.parse(CLAVE_SECRETA.padEnd(32, '0').substring(0, 32));
+    const datosCifrados = CryptoJS.AES.encrypt(JSON.stringify(payload), key, {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+    }).toString();
+
     try {
-        const res = await fetch('/api/reservas', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-        if((await res.json()).success) { alert("¡Reserva Exitosa!"); modalInstance.hide(); window.location.href = 'mis_viajes.html'; }
-        else alert("Error en reserva");
-    } catch(e) { alert("Error de conexión"); }
+        const res = await fetch('/api/reservas', { 
+            method: 'POST', 
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken}`,
+                'X-CSRF-Token': csrfToken 
+            }, 
+            body: JSON.stringify({ encrypted_data: datosCifrados }) 
+        });
+
+        if (res.status === 403) {
+            alert("⚠️ Error de seguridad: Token CSRF no válido o ausente.");
+            return;
+        }
+
+        const data = await res.json();
+        if(data.success) { 
+            alert("¡Reserva Exitosa y Protegida con CSRF!"); 
+            modalInstance.hide(); 
+            window.location.href = 'mis_viajes.html'; 
+        }
+    } catch(e) { 
+        console.error(e);
+        alert("Error de conexión"); 
+    }
 }
 
+// --- MIS VIAJES Y CANCELACIONES ---
 async function cargarMisViajes() {
-    const userStr = localStorage.getItem('user');
-    if(!userStr) return;
+    const user = JSON.parse(localStorage.getItem('user'));
+    if(!user) return;
     const container = document.getElementById('lista-reservas');
+    if(!container) return;
     try {
-        const res = await fetch(`/api/mis_reservas/${JSON.parse(userStr).id}`);
+        const res = await fetch(`/api/mis_reservas/${user.id}`);
         const reservas = await res.json();
-        if(!reservas.length) { container.innerHTML = '<div class="col-12 text-center text-secondary py-5">Sin viajes.</div>'; return; }
-        
-        container.innerHTML = reservas.map(r => {
-            const color = r.status === 'Cancelado' ? 'danger' : 'success';
-            // Mostrar la opción elegida si existe en detalles
-            const opcionInfo = r.detalles && r.detalles.opcion ? `<span class="badge bg-secondary mb-2">${r.detalles.opcion}</span>` : '';
-            
-            return `<div class="col-md-6"><div class="card shadow-lg bg-dark border-secondary mb-3">
-                <div class="card-header bg-black border-secondary d-flex justify-content-between">
-                    <span class="text-white fw-bold">${r.service_type.toUpperCase()}</span><span class="badge bg-${color}">${r.status}</span>
+        container.innerHTML = reservas.map(r => `
+            <div class="col-md-6 mb-3">
+                <div class="card bg-dark border-secondary text-white">
+                    <div class="card-body">
+                        <h5>${r.item_name}</h5>
+                        <p class="text-success fw-bold">$${parseFloat(r.total_price).toLocaleString()}</p>
+                        ${r.status !== 'Cancelado' ? `<button class="btn btn-sm btn-danger" onclick="cancelarReserva(${r.id})">Cancelar</button>` : '<span class="badge bg-danger">Cancelado</span>'}
+                    </div>
                 </div>
-                <div class="card-body">
-                    <h5 class="text-white">${r.item_name}</h5>
-                    ${opcionInfo}
-                    <p class="text-secondary small">Inicia: ${new Date(r.date_start).toLocaleDateString()}</p>
-                    <h4 class="text-success">$${parseFloat(r.total_price).toLocaleString('en-US')}</h4>
-                    ${r.status !== 'Cancelado' ? `<button class="btn btn-outline-danger btn-sm w-100 mt-2" onclick="cancelarReserva(${r.id})">Cancelar</button>` : ''}
-                </div></div></div>`;
-        }).join('');
+            </div>`).join('');
     } catch(e) { console.error(e); }
 }
 
 async function cancelarReserva(id) {
-    if(confirm("¿Cancelar? (Reembolso 30%)")) {
-        await fetch(`/api/reservas/cancelar/${id}`, { method: 'POST' });
-        location.reload();
+    if(confirm("¿Cancelar esta reserva? (Reembolso 30%)")) {
+        const csrfToken = localStorage.getItem('csrf_token');
+        const jwtToken = localStorage.getItem('token');
+        
+        try {
+            const res = await fetch(`/api/reservas/cancelar/${id}`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${jwtToken}`,
+                    'X-CSRF-Token': csrfToken
+                }
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert(`Cancelación exitosa. Reembolso: $${data.reembolso}`);
+                location.reload();
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Error al cancelar");
+        }
     }
 }
 
-//2fa
-
-let temporalSecret = ""; // Guardará el secreto mientras verificamos
-
+// --- 2FA LOGIC ---
+let temporalSecret = "";
 async function abrirConfigurar2FA() {
-    // Pedimos al backend un nuevo secreto
-    const response = await fetch('/api/setup-2fa', { method: 'POST' });
+    const user = JSON.parse(localStorage.getItem('user'));
+    const response = await fetch('/api/generate-2fa', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id })
+    });
     const data = await response.json();
-    
     temporalSecret = data.secret;
-    
-    // Mostramos el secreto en el modal
-    document.getElementById('2fa-secret-display').innerText = temporalSecret;
-    document.getElementById('modal2FA').style.display = 'block';
+    const secretDisplay = document.getElementById('2fa-secret-display');
+    if(secretDisplay) secretDisplay.innerText = temporalSecret;
+    const modal2fa = document.getElementById('modal2FA');
+    if(modal2fa) modal2fa.style.display = 'block';
 }
 
-// Cambiamos el nombre para que coincida con el botón del modal
-async function verificar2FA() {
-    const token = document.getElementById('2fa-token-input').value;
-    
-    const userData = JSON.parse(localStorage.getItem('user'));
-    
-    if (!userData || !userData.id) {
-        alert("Error: No se detectó un usuario activo.");
-        return;
-    }
+function cerrarModal2FA() {
+    const modal2fa = document.getElementById('modal2FA');
+    if(modal2fa) modal2fa.style.display = 'none';
+}
 
+async function verificar2FA() {
+    const tokenInput = document.getElementById('2fa-token-input');
+    const token = tokenInput ? tokenInput.value : "";
+    const user = JSON.parse(localStorage.getItem('user'));
     const response = await fetch('/api/verify-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            secret: temporalSecret, 
-            token: token,
-            user_id: userData.id 
-        })
+        body: JSON.stringify({ otp_code: token, user_id: user.id })
     });
-    
-    const result = await response.json();
-    
-    if (result.valid) {
-        alert("¡Éxito! 2FA activado y guardado en tu perfil.");
-        cerrarModal2FA();
+    const data = await response.json();
+    if (data.success) { 
+        localStorage.setItem('token', data.token); 
+        alert("¡2FA Verificado!"); 
+        location.reload(); 
     } else {
-        alert("Código inválido. Revisa tu app de Google Authenticator.");
+        alert("Código incorrecto");
     }
-}
-
-// Función auxiliar para cerrar el modal
-function cerrarModal2FA() {
-    document.getElementById('modal2FA').style.display = 'none';
 }

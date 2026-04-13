@@ -6,3 +6,4 @@ qrcode
 Pillow
 flask-bcrypt
 PyJWT
+pycryptodome

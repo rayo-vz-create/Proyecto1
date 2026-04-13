@@ -43,22 +43,16 @@
             transition: 0.3s;
             cursor: pointer;
         }
-
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-        }
     </style>
 </head>
 
-<body class="bg-black">
+<body class="bg-black text-white">
 
     <div class="bg-dark border-bottom border-secondary py-1">
         <div class="container d-flex justify-content-end align-items-center" id="auth-buttons"></div>
     </div>
 
-    <nav
-        class="navbar navbar-expand-lg navbar-dark bg-black sticky-top border-bottom border-danger border-opacity-25 shadow">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-black sticky-top border-bottom border-danger border-opacity-25 shadow">
         <div class="container">
             <a class="navbar-brand fw-bold fst-italic" href="/">
                 <i class="fas fa-paper-plane text-danger me-2"></i>Viaje<span class="text-danger">GO</span>
@@ -69,7 +63,7 @@
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav gap-3">
                     <li class="nav-item"><a class="nav-link active text-danger" href="/">Inicio</a></li>
-                    <li class="nav-item"><a class="nav-link hover-white" href="#catalogo-nacional">Servicios</a></li>
+                    <li class="nav-item"><a class="nav-link text-light" href="#catalogo-nacional">Servicios</a></li>
                 </ul>
             </div>
         </div>
@@ -80,8 +74,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-10">
                     <h1 class="display-3 fw-bold text-white mb-3">Explora México sin límites</h1>
-                    <p class="lead text-light mb-5 opacity-75">Vuelos, Hoteles y Autobuses con la mejor experiencia
-                        garantizada.</p>
+                    <p class="lead text-light mb-5 opacity-75">Vuelos, Hoteles y Autobuses con la mejor experiencia garantizada.</p>
                     <a href="#catalogo-nacional" class="btn btn-danger btn-lg rounded-pill px-5 fw-bold shadow-lg">
                         Reservar Ahora <i class="fas fa-angle-down ms-2"></i>
                     </a>
@@ -99,8 +92,7 @@
         <div class="row justify-content-center mb-5 g-2">
             <div class="col-md-8">
                 <div class="input-group">
-                    <span class="input-group-text bg-dark border-secondary text-secondary"><i
-                            class="fas fa-search"></i></span>
+                    <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fas fa-search"></i></span>
                     <input type="text" id="filtroDestino" class="form-control bg-black text-white border-secondary"
                         placeholder="Buscar destino, aerolínea, hotel..." onkeyup="aplicarFiltros()">
                 </div>
@@ -113,35 +105,32 @@
         <ul class="nav nav-pills justify-content-center mb-5 nav-pills-custom" id="catalogoTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active px-4 py-2" id="vuelos-tab" data-bs-toggle="pill"
-                    data-bs-target="#vuelos-content" type="button" role="tab" aria-controls="vuelos-content"
-                    aria-selected="true">
+                    data-bs-target="#vuelos-pane" type="button" role="tab">
                     <i class="fas fa-plane me-2"></i> Vuelos
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link px-4 py-2" id="hoteles-tab" data-bs-toggle="pill"
-                    data-bs-target="#hoteles-content" type="button" role="tab" aria-controls="hoteles-content"
-                    aria-selected="false">
+                    data-bs-target="#hoteles-pane" type="button" role="tab">
                     <i class="fas fa-hotel me-2"></i> Hoteles
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link px-4 py-2" id="autobuses-tab" data-bs-toggle="pill"
-                    data-bs-target="#autobuses-content" type="button" role="tab" aria-controls="autobuses-content"
-                    aria-selected="false">
+                    data-bs-target="#autobuses-pane" type="button" role="tab">
                     <i class="fas fa-bus-alt me-2"></i> Autobuses
                 </button>
             </li>
         </ul>
 
-        <div class="tab-content" id="pills-tabContent">
-            <div class="tab-pane fade show active" id="vuelos-content" role="tabpanel">
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="vuelos-pane" role="tabpanel">
                 <div id="vuelos-container" class="row row-cols-1 row-cols-md-3 g-4"></div>
             </div>
-            <div class="tab-pane fade" id="hoteles-content" role="tabpanel">
+            <div class="tab-pane fade" id="hoteles-pane" role="tabpanel">
                 <div id="hoteles-container" class="row row-cols-1 row-cols-md-3 g-4"></div>
             </div>
-            <div class="tab-pane fade" id="autobuses-content" role="tabpanel">
+            <div class="tab-pane fade" id="autobuses-pane" role="tabpanel">
                 <div id="autobuses-container" class="row row-cols-1 row-cols-md-3 g-4"></div>
             </div>
         </div>
@@ -157,54 +146,46 @@
                 <div class="modal-body p-4">
                     <form id="bookingForm">
                         <div id="dynamicFields" class="mb-4"></div>
-                        <div
-                            class="d-flex justify-content-between align-items-center bg-black p-3 rounded mb-4 border border-secondary border-opacity-50">
+                        <div class="d-flex justify-content-between align-items-center bg-black p-3 rounded mb-4 border border-secondary border-opacity-50">
                             <span class="text-secondary">Total estimado:</span>
                             <h2 class="m-0 fw-bold text-white" id="totalPriceDisplay">$0.00</h2>
                         </div>
                         <h6 class="text-danger fw-bold border-bottom border-secondary pb-2 mb-3">Método de Pago</h6>
                         <div class="row g-3">
-                            <div class="col-12"><input type="text"
-                                    class="form-control bg-dark border-secondary text-white"
-                                    placeholder="Nombre en la tarjeta" required></div>
-                            <div class="col-7"><input type="text"
-                                    class="form-control bg-dark border-secondary text-white" id="cardNum"
-                                    placeholder="0000 0000 0000 0000" maxlength="16" required></div>
-                            <div class="col-3"><input type="text"
-                                    class="form-control bg-dark border-secondary text-white" id="cardExp"
-                                    placeholder="MM/AA" maxlength="5" required></div>
-                            <div class="col-2"><input type="password"
-                                    class="form-control bg-dark border-secondary text-white" id="cardCvv"
-                                    placeholder="CVV" maxlength="3" required></div>
+                            <div class="col-12"><input type="text" class="form-control bg-dark border-secondary text-white" placeholder="Nombre en la tarjeta" required></div>
+                            <div class="col-7"><input type="text" class="form-control bg-dark border-secondary text-white" id="cardNum" placeholder="0000 0000 0000 0000" maxlength="16" required></div>
+                            <div class="col-3"><input type="text" class="form-control bg-dark border-secondary text-white" id="cardExp" placeholder="MM/AA" maxlength="5" required></div>
+                            <div class="col-2"><input type="password" class="form-control bg-dark border-secondary text-white" id="cardCvv" placeholder="CVV" maxlength="3" required></div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer border-secondary bg-black">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger fw-bold px-4" onclick="procesarPago()">Pagar y
-                        Confirmar</button>
+                    <button type="button" class="btn btn-danger fw-bold px-4" onclick="procesarPago()">Pagar y Confirmar</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="modal2FA" class="modal-custom" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#121212; padding:30px; border:1px solid #dc3545; z-index:1000; border-radius:15px; width:90%; max-width:400px; box-shadow: 0 0 20px rgba(220,53,69,0.2);">
+        <h4 class="text-white fw-bold mb-3"><i class="fas fa-shield-alt text-danger me-2"></i>Seguridad 2FA</h4>
+        <p class="text-secondary small">Escanea o ingresa esta llave en Google Authenticator:</p>
+        <div id="2fa-secret-display" class="bg-black p-2 text-center text-danger fw-bold border border-secondary rounded mb-3" style="letter-spacing: 2px;"></div>
+        <input type="text" id="2fa-token-input" class="form-control bg-black text-white border-secondary text-center mb-3" placeholder="Código de 6 dígitos" maxlength="6">
+        <div class="d-grid gap-2">
+            <button class="btn btn-danger fw-bold" onclick="verificar2FA()">Activar Protección</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('modal2FA').style.display='none'">Cerrar</button>
+        </div>
+    </div>
+
     <footer class="bg-black py-4 border-top border-secondary mt-5">
         <div class="container text-center text-secondary">
-            <p class="mb-0 small">© 2025 ViajeGO. Todos los derechos reservados.</p>
+            <p class="mb-0 small">© 2026 ViajeGO. Todos los derechos reservados.</p>
         </div>
     </footer>
 
-    <div id="modal2FA"
-        style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border:2px solid #000; z-index:1000;">
-        <h3>Configurar Autenticación de 2 Pasos</h3>
-        <p>Escanea este código o ingresa la llave en Google Authenticator:</p>
-        <div id="2fa-secret-display" style="font-weight:bold; color:blue; margin:10px 0;"></div>
-        <input type="text" id="2fa-token-input" placeholder="Código de 6 dígitos">
-        <button onclick="verificar2FA()">Verificar y Activar</button>
-        <button onclick="cerrarModal2FA()">Cancelar</button>
-    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/app.js"></script>
 </body>
-
 </html>
